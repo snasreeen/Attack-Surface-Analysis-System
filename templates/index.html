@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CyberScan — Attack Surface Analysis</title>
+  <script>
+    (function () {
+      try {
+        var k = 'cyberscan-theme';
+        var t = localStorage.getItem(k);
+        if (!t) t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-theme', t);
+      } catch (e) {}
+    })();
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<button type="button" id="theme-toggle" class="theme-toggle" aria-label="Switch to dark mode" title="Dark mode">
+  <span class="theme-icon theme-icon-sun" aria-hidden="true">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+  </span>
+  <span class="theme-icon theme-icon-moon" aria-hidden="true">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+  </span>
+</button>
+
+<!-- ── NAV ─────────────────────────────────────────────────── -->
+<nav id="navbar" class="hidden">
+  <div class="nav-brand">
+    <span class="nav-icon">⬡</span>
+    <span class="mono">Cyber<strong>Scan</strong></span>
+  </div>
+  <div class="nav-links">
+    <button class="nav-link" data-target="dashboard" onclick="showSection('dashboard')">Dashboard</button>
+    <button class="nav-link" data-target="results" onclick="showSection('results')">Results</button>
+    <button class="nav-link" data-target="logs" onclick="showSection('logs')">Logs</button>
+    <button class="nav-link" data-target="risk" onclick="showSection('risk')">Risk</button>
+  </div>
+  <div class="nav-right">
+    <span id="nav-user" class="nav-user hidden"></span>
+    <button id="nav-logout" class="btn-ghost" onclick="logout()">Logout</button>
+  </div>
+</nav>
+
+<!-- ── APP CONTAINER ─────────────────────────────────────────── -->
+<main id="app-container">
+
+  <!-- ═══════════════════════════════ SECTION 1 — HERO / LOGIN ══ -->
+  <section id="sec-login" class="section active-section">
+    <div class="hero-bg">
+      <div class="grid-overlay"></div>
+      <div class="blob blob-1"></div>
+      <div class="blob blob-2"></div>
+    </div>
+    <div class="section-inner">
+      <div class="hero-left">
+        <div class="badge">MITRE ATT&CK Framework</div>
+        <h1 class="hero-title">Attack Surface<br><span class="accent">Analysis</span></h1>
+        <p class="hero-sub">Discover open ports, map vulnerabilities to MITRE ATT&CK techniques, generate attack paths, and assess your risk exposure — all in one platform.</p>
+        <div class="hero-stats">
+          <div class="stat"><span class="stat-n">200+</span><span class="stat-l">CVEs Mapped</span></div>
+          <div class="stat"><span class="stat-n">50+</span><span class="stat-l">ATT&CK Techniques</span></div>
+          <div class="stat"><span class="stat-n">Real-time</span><span class="stat-l">Analysis</span></div>
+        </div>
+      </div>
+
+      <div class="hero-right">
+        <!-- LOGIN CARD -->
+        <div class="auth-card" id="login-card">
+          <div class="auth-header">
+            <h2>Welcome back</h2>
+            <p>Sign in to your analyst account</p>
+          </div>
+          <div class="auth-info-box">
+            Use Email/Password for full access. Google and OTP login are optional demo features.
+          </div>
+
+          <div class="auth-primary-group">
+          <div class="form-group">
+            <label>Email</label>
+            <input type="email" id="login-email" placeholder="analyst@cybersec.io" class="input-field">
+          </div>
+          <div class="form-group">
+            <label>Password</label>
+            <input type="password" id="login-password" placeholder="••••••••" class="input-field">
+          </div>
+          <div id="login-error" class="msg-error hidden"></div>
+          <button class="btn-primary full-width" onclick="doLogin()">
+            <span>Sign In</span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </button>
+          </div>
+
+          <div class="auth-divider"><span>OR</span></div>
+          <div class="auth-alt-group">
+          <button class="btn-google full-width" onclick="startGoogleLogin()">Login with Google</button>
+          <p class="auth-note">Google login requires OAuth configuration</p>
+          <div class="otp-wrap">
+            <button class="btn-ghost full-width" onclick="sendOtp()">Send OTP to Email</button>
+            <div class="form-group">
+              <label>OTP Code</label>
+              <input type="text" id="otp-code" placeholder="Enter 6-digit OTP" class="input-field" maxlength="6">
+            </div>
+            <button class="btn-ghost full-width" onclick="verifyOtp()">Verify OTP Login</button>
+          </div>
+          <p class="auth-note">OTP is simulated for demo (check server console)</p>
+          </div>
+          <p class="auth-switch">Don't have an account? <a href="#" onclick="showSection('reg')">Create one</a></p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════ SECTION 2 — REGISTER ══ -->
+  <section id="sec-reg" class="section">
+    <div class="hero-bg">
+      <div class="grid-overlay"></div>
+      <div class="blob blob-3"></div>
+    </div>
+    <div class="section-inner centered">
+      <div class="auth-card wide">
+        <div class="auth-header">
+          <h2>Create Account</h2>
+          <p>Join the cybersecurity platform</p>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Full Name</label>
+            <input type="text" id="reg-name" placeholder="Alex Morgan" class="input-field">
+          </div>
+          <div class="form-group">
+            <label>Email</label>
+            <input type="email" id="reg-email" placeholder="analyst@cybersec.io" class="input-field">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="reg-password" placeholder="Create a strong password" class="input-field">
+        </div>
+        <div id="reg-msg" class="hidden"></div>
+        <button class="btn-primary full-width" onclick="doRegister()">
+          <span>Create Account</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+        </button>
+        <p class="auth-switch">Already have an account? <a href="#" onclick="showSection('login')">Sign in</a></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════ SECTION 3 — DASHBOARD ══ -->
+  <section id="sec-dashboard" class="section protected-section restricted">
+    <div class="hero-bg">
+      <div class="grid-overlay"></div>
+      <div class="blob blob-2"></div>
+    </div>
+    <div class="section-inner centered">
+      <div class="dashboard-wrap">
+        <div class="dash-header">
+          <div class="badge">Attack Surface Scanner</div>
+          <h2 class="dash-title">Enter Target IP</h2>
+          <p class="dash-sub">Provide an IP address to begin surface analysis. Only scan systems you are authorized to test.</p>
+        </div>
+        <div class="scan-box">
+          <div class="scan-input-wrap">
+            <span class="scan-prefix">$  nmap  </span>
+            <input type="text" id="ip-input" placeholder="192.168.1.1" class="scan-input" maxlength="45">
+          </div>
+          <button class="btn-scan" id="scan-btn" onclick="startScan()">
+            <span class="btn-scan-text">Launch Scan</span>
+            <span class="btn-scan-icon">⟶</span>
+          </button>
+        </div>
+        <div id="scan-error" class="msg-error hidden"></div>
+        <div class="ip-presets">
+          <span class="preset-label">Quick targets:</span>
+          <button class="preset" onclick="setIP('127.0.0.1')">localhost</button>
+          <button class="preset" onclick="setIP('192.168.1.1')">192.168.1.1</button>
+          <button class="preset" onclick="setIP('10.0.0.1')">10.0.0.1</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════ SECTION 4 — SCANNING ══ -->
+  <section id="sec-scanning" class="section protected-section restricted">
+    <div class="section-inner centered">
+      <div class="scan-anim-wrap">
+        <div class="radar-ring r1"></div>
+        <div class="radar-ring r2"></div>
+        <div class="radar-ring r3"></div>
+        <div class="radar-core">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        </div>
+        <h2 class="scan-title">Analyzing Attack Surface</h2>
+        <p class="scan-sub" id="scan-status-text">Initializing scan engine...</p>
+        <div class="scan-progress">
+          <div class="scan-bar" id="scan-bar"></div>
+        </div>
+        <div class="scan-log" id="scan-log"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════ SECTION 5 — RESULTS ══ -->
+  <section id="sec-results" class="section protected-section restricted">
+    <div class="hero-bg"><div class="grid-overlay"></div></div>
+    <div class="section-inner">
+      <div class="results-header">
+        <div class="badge">Scan Complete</div>
+        <h2>Vulnerability Report</h2>
+        <p id="results-ip-label" class="results-sub"></p>
+      </div>
+      <div class="results-grid" id="results-grid">
+        <!-- Cards injected by JS -->
+      </div>
+      <div class="results-nav">
+        <button class="btn-ghost" onclick="showSection('dashboard')">← New Scan</button>
+        <button class="btn-primary" onclick="showSection('logs')">View Log Analysis →</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════ SECTION 6 — LOGS ══ -->
+  <section id="sec-logs" class="section protected-section restricted">
+    <div class="hero-bg"><div class="grid-overlay"></div></div>
+    <div class="section-inner">
+      <div class="results-header">
+        <div class="badge">Log Intelligence</div>
+        <h2>Log Analysis</h2>
+        <p class="results-sub">Suspicious activity detected in system logs</p>
+      </div>
+      <div class="logs-body" id="logs-body">
+        <!-- Injected by JS -->
+      </div>
+      <div class="results-nav">
+        <button class="btn-ghost" onclick="showSection('results')">← Results</button>
+        <button class="btn-primary" onclick="showSection('risk')">Risk Assessment →</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════ SECTION 7 — RISK ══ -->
+  <section id="sec-risk" class="section protected-section restricted">
+    <div class="hero-bg"><div class="grid-overlay"></div></div>
+    <div class="section-inner centered">
+      <div class="risk-wrap" id="risk-wrap">
+        <!-- Injected by JS -->
+      </div>
+    </div>
+  </section>
+
+</main><!-- /app-container -->
+
+<div id="toast-container" aria-live="polite" aria-atomic="true"></div>
+
+<script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
